@@ -1,0 +1,14 @@
+---
+  - name: Download elastic agent
+    get_url:
+      url: https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-{{ agent_version }}-linux-x86_64.tar.gz
+      dest: .
+  - name: extract elk
+    unarchive:
+      src: elastic-agent-{{ agent_version }}-linux-x86_64.tar.gz
+      dest: .
+      remote_src: yes
+  - name: Enroll Elastic Agent into Fleet Server
+    args:
+      chdir: elastic-agent-{{ agent_version }}-linux-x86_64/
+    shell: "printf 'yes' | sudo ./elastic-agent install --url={{ fleet_url }} --enrollment-token={{ enrollment_token}}"

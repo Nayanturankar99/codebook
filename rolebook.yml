@@ -1,0 +1,7 @@
+---
+- name: elkplaybook
+  hosts: node1
+  vars_files:
+   - /root/role/install/vars/main.yml
+  roles:
+   - /root/role/install
