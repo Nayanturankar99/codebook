@@ -24,7 +24,7 @@ pipeline {
         }
         stage('Clone Repo') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'pipeline', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                withCredentials([usernamePassword(credentialsId: 'nayan', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                     git url: 'https://$GIT_USERNAME:$GIT_PASSWORD@github.com/igphub/devops_development.git'
                 }
             }
