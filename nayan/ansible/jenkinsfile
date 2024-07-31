@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+    
+    parameters {
+        string(name: 'refered_ec2_private_ip', defaultValue: '', description: 'Instance Ip')
+        choice(name: 'ami_tag_dont_delete', choices: ['true', 'false'])
+        string(name: 'ec2_name',defaultValue: '', description: 'Name your Instance')
+        string(name: 'ec2_instance_type', defaultValue: 't3.medium', description: 'AWS Instance Type')
+        choice(name: 'ec2_environment', choices: ['test','production','uat'])
+        choice(name: 'ec2_team', choices:['backed','frontend','devops'])
+        string(name: 'ec2_service', defaultValue: ' ', description: 'Service Tag')
+        string(name: 'ec2_os', defaultValue: 'rocky-linux-9', description: 'Os Tag')
+        string(name: 'ec2_os_user', defaultValue: 'rocky', description: 'Os User Tag')
+        string(name: 'region', defaultValue: 'us-east-1', description: 'Region')
+        string(name: 'ec2_count', defaultValue: '', description: 'Instance Count')
+        string(name: 'google_chat_webhook', defaultValue: 'https://chat.googleapis.com/v1/spaces/AAAA94aBUQI/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=jIg39cFNhnurEYf6I67Ik_vEodu7Ff5vEwE8nS6_FKA', description: 'Webhook Url')
+    }
+
+    stages {
+        stage('Cleanup') {
+            steps {
+                deleteDir()
+            }
+        }
+        stage('Clone Repo') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'pipeline', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                    git url: 'https://$GIT_USERNAME:$GIT_PASSWORD@github.com/igphub/devops_development.git'
+                }
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                ansiblePlaybook(
+                    installation: 'Ansible',
+                    playbook: '/etc/ansible/playbook/openvpn_setup.yml',
+                    inventory: 'localhost',
+                    extras: '''
+                        -e -e refered_ec2_private_ip="$refered_ec2_private_ip" 
+                        -e region="$region" 
+                        -e ami_tag_environment="$ami_tag_environment" 
+                        -e ami_tag_service_name="$ami_tag_service_name" 
+                        -e ami_tag_team="$ami_tag_team" 
+                        -e ami_tag_app_version="$ami_tag_app_version" 
+                        -e ami_tag_dont_delete="$ami_tag_dont_delete" 
+                        -e ec2_instance_type="$ec2_instance_type" 
+                        -e ec2_tag_Name="$ec2_tag_Name" 
+                        -e ec2_tag_environment="$ec2_tag_environment" 
+                        -e ec2_tag_cluster="$ec2_tag_cluster" 
+                        -e ec2_tag_os="$ec2_tag_os" 
+                        -e ec2_tag_os_user="$ec2_tag_os_user" 
+                        -e ec2_tag_ssh_port="$ec2_tag_ssh_port" 
+                        -e ec2_tag_service="$ec2_tag_service" 
+                        -e ec2_tag_team="$ec2_tag_team" 
+                        -e ec2_count="$ec2_count" 
+                        -e google_chat_webhook="$google_chat_webhook"
+                        '''
+                    )
+                }
+                
+            }
+            
+            stage('Delete the Cloned Repo') {
+            steps {
+                deleteDir()
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
+        
+
+    

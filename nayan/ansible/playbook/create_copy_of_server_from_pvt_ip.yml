@@ -1,0 +1,15 @@
+# Playbook to create a copy of a ec2 instance.
+# Notes:
+#   - get_ec2_info --> Role to get the information about ec2 instance.
+#   - create_ami --> Role for creating AMI using the ec2 instanceID.
+#   - ec2up --> Role to launch a instance.
+#   - notify_to_gchat --> Role for sending message to google chat.
+# Example invocation:
+#ansible-playbook  -vvv ansible/playbooks/create_copy_of_server_from_pvt_ip.yml -e refered_ec2_private_ip="$refered_ec2_private_ip" -e region="$region" -e ami_tag_environment="$ami_tag_environment" -e ami_tag_service_name="$ami_tag_service_name" -e ami_tag_team="$ami_tag_team" -e ami_tag_app_version="$ami_tag_app_version" -e ami_tag_dont_delete="$ami_tag_dont_delete" -e ec2_instance_type="$ec2_instance_type" -e ec2_tag_Name="$ec2_tag_Name" -e ec2_tag_environment="$ec2_tag_environment" -e ec2_tag_cluster="$ec2_tag_cluster" -e ec2_tag_os="$ec2_tag_os" -e ec2_tag_os_user="$ec2_tag_os_user" -e ec2_tag_ssh_port="$ec2_tag_ssh_port" -e ec2_tag_service="$ec2_tag_service" -e ec2_tag_team="$ec2_tag_team" -e ec2_count="$ec2_count" -e google_chat_webhook="$google_chat_webhook"
+---
+- hosts: localhost
+  roles:
+    - { role: "get_ec2_info",filter: {"private-ip-address": "{{ refered_ec2_private_ip }}"}}
+    - { role: "create_ami", ami_instance_id: "{{ instance_info.instances[0].instance_id }}", ami_name: "copyami-{{ec2_tag_Name}}" }
+    - { role: "ec2up", ami_id: "{{ create_ami_info.image_id }}", ec2_instance_profile: "{{ instance_info.instances[0].iam_instance_profile.arn.split('/')[-1] | default(omit)}}", ec2_key_name: "{{ instance_info.instances[0].key_name }}", ec2_sg_id: "{{ instance_info.instances[0].security_groups | map(attribute='group_id') | join(',') }}"  }
+    - { role: "notify_to_gchat", message: "Copy of {{refered_ec2_private_ip}} server is created and its private IP is {{ec2_instance_info.instances[0].private_ip_address}}", google_chat_webhook: "{{google_chat_webhook}}"}

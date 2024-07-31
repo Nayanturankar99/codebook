@@ -1,0 +1,5 @@
+ - name: Get information about the EC2 instance
+   ec2_instance_info:
+        region: "{{ region }}"
+        filters: "{{filter}}"
+   register: instance_info
